@@ -18,7 +18,7 @@ auth.set_access_token(access_token, access_token_secret)
 api = tweepy.API(auth)
 
 #https://github.com/tweepy/tweepy/issues/554
-user = api.get_user(screen_name = "youareinaroom")
+user = api.me()
 
 def dm_tweet_to_admins(user, tweet_id, error = "Help me with this tweet!"):
     admins = open("admins.txt", "r")
@@ -28,7 +28,11 @@ def dm_tweet_to_admins(user, tweet_id, error = "Help me with this tweet!"):
 
 if __name__ == "__main__":
 
-    dm_tweet_to_admins("octopotus", "567364462207041536")    
+    #dm_tweet_to_admins("octopotus", "567364462207041536")    
 
-
+    latest_id = None
+    tweets = api.search(to = user.screen_name, since_id = latest_id)
+    latest_id = tweets[0]._json["id"]
+    for tweet in tweets:
+        print(tweet._json["text"])
 
