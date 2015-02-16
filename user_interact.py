@@ -29,6 +29,9 @@ class Interaction:
 		This class manages the interactions themselves, their responses and how they change states.
 	"""
 	def __init__(self, statement, response, changes={}):
+		"""
+			Simple initialisation, storing the values directly to the attribute.
+		"""
 		self.statement=statement
 		self.response=response
 		self.changes=changes
