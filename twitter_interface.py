@@ -20,16 +20,15 @@ api = tweepy.API(auth)
 #https://github.com/tweepy/tweepy/issues/554
 user = api.get_user(screen_name = "youareinaroom")
 
-def dm_tweet_to_admins(tweet_id):
+def dm_tweet_to_admins(user, tweet_id, error = "Help me with this tweet!"):
     admins = open("admins.txt", "r")
     
     for line in admins:
-        api.send_direct_message(user = line, text = "Help me with tweet_id " + str(tweet_id))
-
+        api.send_direct_message(user = line, text = error + " https://twitter.com/" + str(user) + "/status/" + str(tweet_id))
 
 if __name__ == "__main__":
 
-    dm_tweet_to_admins("123")    
+    dm_tweet_to_admins("octopotus", "567364462207041536")    
 
 
 
