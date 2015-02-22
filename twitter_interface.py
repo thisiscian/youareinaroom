@@ -2,6 +2,7 @@
 # Connect to the Twitter API please
 
 import tweepy
+import time
 
 consumer = open("consumer.txt", "r").read().splitlines()
 access = open("access.txt", "r").read().splitlines()
@@ -26,14 +27,27 @@ def dm_tweet_to_admins(user, tweet_id, error = "Help me with this tweet!"):
     for line in admins:
         api.send_direct_message(user = line, text = error + " https://twitter.com/" + str(user) + "/status/" + str(tweet_id))
 
+def get_mentions():
+    latest_id = None
+    
+    while(True):
+        try:
+            tweets = api.search(to = user.screen_name, since_id = latest_id)
+            latest_id = tweets[0].id
+
+            for tweet in tweets:
+                print("@" + tweet.user.screen_name + ":")
+                print(tweet.text + "\n")
+        
+            time.sleep(0)
+            print(tweets[0].id)
+
+        except KeyboardInterrupt:
+            return -1
+        except:
+            continue
+
 if __name__ == "__main__":
 
-    #dm_tweet_to_admins("octopotus", "567364462207041536")    
-
-    latest_id = None
-    tweets = api.search(to = user.screen_name, since_id = latest_id)
-    latest_id = tweets[0]._json["id"]
-    for tweet in tweets:
-        print("@" + tweet.user.screen_name + ":")
-        print(tweet.text + "\n")
+    get_mentions()
 
