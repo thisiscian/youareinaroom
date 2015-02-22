@@ -121,3 +121,10 @@ class Interactors:
 		"""
 		raise Exception("THIS HAS NOT BEEN IMPLEMENTED")
 
+
+def load(path):
+	"""
+		Load stored Interactors from a file
+	"""
+	return (None, None)
+	

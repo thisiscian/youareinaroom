@@ -2,4 +2,5 @@ admins.txt
 consumer.txt
 access.txt
 *.swp
-
+*.db
+__pycache__
