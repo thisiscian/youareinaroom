@@ -34,5 +34,6 @@ if __name__ == "__main__":
     tweets = api.search(to = user.screen_name, since_id = latest_id)
     latest_id = tweets[0]._json["id"]
     for tweet in tweets:
-        print(tweet._json["text"])
+        print("@" + tweet.user.screen_name + ":")
+        print(tweet.text + "\n")
 
