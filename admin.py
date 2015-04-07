@@ -97,8 +97,7 @@ if __name__=='__main__':
 		exit(1)
 	database_path=sys.argv[1]
 	if not os.path.isfile(database_path):
-		print("\x1b[31;1mError\x1b[0m: could not find supplied database \""+database_path+"\"")
-		exit(1)
+		print('Creating database...')
 	db=database.Database(database_path)
 	try:
 		GameUpdater(db).cmdloop()
