@@ -16,9 +16,9 @@ def intro_handler(header,message,hint):
 	output+=' ╔'+'─'*(width-4)+'╗ \n'
 	output+=' │'+header_pre+'\x1b[1m'+header+'\x1b[0m'+header_post+'│ \n'
 	output+=' ╚'+'─'*(width-4)+'╝ \n'
-	output+=' '*messages_pre+'┌'+'─'*len(message)+'┐\n'
-	output+='  '+'═'*(messages_pre-2)+'╡'+message+'╞'+'═'*(messages_post-2)+'\n'
-	output+=' '*messages_pre+'└'+'─'*len(message)+'┘\n'
+	output+=' '*(messages_pre+1)+'┌'+'─'*len(message)+'┐\n'
+	output+='  '+'═'*(messages_pre-1)+'╡'+message+'╞'+'═'*(messages_post-1)+'\n'
+	output+=' '*(messages_pre+1)+'└'+'─'*len(message)+'┘\n'
 	output+='\n'+hint
 	return output
 
