@@ -3,6 +3,8 @@ import cmd
 import readline
 import database
 import os 
+import tempfile
+import subprocess
 
 def intro_handler(header,message,hint):
 	width=int(os.popen('stty size','r').read().split()[1])
@@ -28,6 +30,7 @@ class GameUpdater(cmd.Cmd):
 	def __init__(self, database):
 		self.db=database
 		self.unhandled=self.db.find_unhandled_commands()
+		print('\x1b[2J\x1b[;H')
 		self.intro=intro_handler('Welcome to the YouAreInARoom admin interface.',
 												'There are {unhandled_count} unhandled commands'.format(unhandled_count=len(self.unhandled)),
 												'Enter \'help\' if you need help'
@@ -69,6 +72,12 @@ class GameUpdater(cmd.Cmd):
 	def complete_command(self,text,line,begin,end):
 		return [expansion for expansion in ['add', 'unhandled'] if expansion.startswith(text)]
 		
+	def do_show(self,line):
+		command=line.split(' ')[0]
+		newline=line.split(' ')[1:]
+		if command == 'unhandled':
+			self.command_unhandled(' '.join(newline))
+
 	def command_unhandled(self,line):
 		if not line:
 			print('Listing unhandled commands...')
@@ -89,6 +98,22 @@ class GameUpdater(cmd.Cmd):
 			is_okay=input('You entered \"%s\"\nIs this okay? (y/n):\n' % command).lower()
 		pass	
 
+	def do_handle(self,line):
+		try:
+			index=int(line.split(' ')[0])
+		except:
+			print('You should fuck off without an argument')
+			return
+		item=self.unhandled[index]
+		print(item)
+		with tempfile.NamedTemporaryFile() as fh:
+			fh.write(bytes('### command ###\n{0}\n'.format(item[0]),'utf-8'))
+			fh.write(b'### state ###\n')
+			fh.write(b'### response ###\n')
+			fh.write(b'### new state ###\n')
+			fh.flush()
+			subprocess.call(['/usr/bin/vim',fh.name])		
+
 if __name__=='__main__':
 	import sys
 	import os
@@ -101,6 +126,7 @@ if __name__=='__main__':
 	db=database.Database(database_path)
 	try:
 		GameUpdater(db).cmdloop()
-	except:
+	except Exception as e:
+		print(e)
 		print('')
 		exit(1)
