@@ -29,25 +29,30 @@ def dm_tweet_to_admins(user, tweet_id, error = "Help me with this tweet!"):
 
 def get_mentions():
     latest_id = None
-    
-    while(True):
-        try:
-            tweets = api.search(to = user.screen_name, since_id = latest_id)
-            latest_id = tweets[0].id
+    tweets = api.search(to = user.screen_name, since_id = latest_id)
+    latest_id = tweets[0].id
 
-            for tweet in tweets:
-                print("@" + tweet.user.screen_name + ":")
-                print(tweet.text + "\n")
-        
-            time.sleep(0)
-            print(tweets[0].id)
+    tweet_info = []
 
-        except KeyboardInterrupt:
-            return -1
-        except:
-            continue
+    for tweet in tweets:
+        tweet_info = [tweet.id, tweet.text, tweet.user.id]
+        #print("@" + tweet.user.screen_name + ":\n" + tweet.text + "\n")
+        print(tweet.id, tweet.text, tweet.user.id)
+        #print(tweet_info)
+
+    #print(tweets[0].id)
+    time.sleep(10)
+
+#def reply(user_id, response):
 
 if __name__ == "__main__":
-
-    get_mentions()
+    
+    #latest_id = None
+    while(True):
+        try:
+            get_mentions()
+        except KeyboardInterrupt:
+            exit(1)
+        except:
+            raise
 
