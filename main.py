@@ -16,17 +16,18 @@ if __name__=="__main__":
 	database=Database(database_path)
 			
 	while(True):
-		for (tweet_id,tweet_text) in ti.get_new_tweets():
+		for (tweet_id,tweet_text,user_id) in ti.get_new_tweets():
 			results=database.find_command(tweet_text)
 			if results is None:
-				if database.is_user(user):
+				if database.is_user(user_id):
+					database.add_command(tweet_text)
 					ti.dm_tweet_to_admins(tweet_id)	
 				else:	
 					continue	
 			(response,change)=choice(results)
-			new_state=database.change_state(user,change)	
+			new_state=database.change_state(user_id,change)	
 			if new_state == '0':
-				database.add_user(user)
+				database.add_user(user_id)
 			else:
 				database.update_state(user,new_state)
-			tweet(response)
+			ti.reply(user_id, response)
