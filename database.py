@@ -6,6 +6,7 @@ class Database:
 	def __find_table(self, table_name):
 		self.__cursor.execute('.tables ?', table_name);
 		return self.__cursor.fetchall()
+
 	def __create_table(self, table_name, values):
 		command='create table if not exists %s (%s)' % ( table_name, values)
 		try:
@@ -22,6 +23,7 @@ class Database:
 		self.__create_table('commands','command,interaction_ids,required_state')
 		self.__create_table('state','range,description')
 		self.__connection.commit()
+
 	def find_state(self, user_id):
 		self.__cursor.execute('select state from users where user_id=?', (user_id,))
 		result=self.__cursor.fetchone()
@@ -29,10 +31,12 @@ class Database:
 			return None
 		else:
 			return result[0]
+
 	def add_user(self, user_id):
 		if not self.find_state(user_id):
 			self.__cursor.execute('insert into users values (?,0)', (user_id,))
 			self.__connection.commit()
+
 	def change_state(self,user_id,change):
 		state=self.find_state(user_id)
 		if not state:
@@ -44,13 +48,26 @@ class Database:
 			return '0'
 		else:
 			return state
+
 	def update_state(self,user_id,new_state):
 		self.__cursor.execute('update users set state=? where user_id=?', (state,user_id))	
 		self.__connection.commit()
+
 	def find_unhandled_commands(self):
-		return self.__cursor.execute('select * from commands where interaction_ids="-1"').fetchall()
+		return self.__cursor.execute('select rowid,* from commands where interaction_ids="-1"').fetchall()
+
+	def remove_unhandled_command(self,rowid):
+		self.__cursor.execute('delete from commands where rowid=?',(rowid,))	
+		self.__connection.commit()
+
+	def add_unhandled_command(self, command, input_state):
+		if command not in [ entry[1] for entry in self.find_unhandled_commands() ]:
+			self.__cursor.execute('insert into commands values (?,"-1",?)',(command,input_state))
+			self.__connection.commit()
+
 	def find_command(self,command):		
 		return self.__cursor.execute('select interaction_ids from commands where command=?', (command,)).fetchall()
+
 	def add_command(self,command):
 		if not self.find_command(command):
 			self.__cursor.execute('insert into commands values (?,"-1")',(command,))

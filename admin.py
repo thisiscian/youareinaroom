@@ -1,12 +1,13 @@
 #!/usr/bin/python3.4
 import cmd
-import readline
 import database
-import os 
-import tempfile
-import subprocess
+import admin.unhandled
 
 def intro_handler(header,message,hint):
+	'''
+	This is a wrapper to produce clean, centered intro text for the `cmd` class
+	'''
+	import os
 	width=int(os.popen('stty size','r').read().split()[1])
 	header_pre=' '*int(width/2-2-len(header)/2)
 	header_post=' '*int(width/2-2-len(header)/2+0.5)
@@ -29,103 +30,89 @@ class GameUpdater(cmd.Cmd):
 	ruler='─'
 	def __init__(self, database):
 		self.db=database
+		admin.unhandled.db=self.db
 		self.unhandled=self.db.find_unhandled_commands()
-		print('\x1b[2J\x1b[;H')
+		print('\x1b[2J\x1b[;H') ## this clears the terminal, and moves the cursor to the top left corner (equivalent to the `clear` command)
 		self.intro=intro_handler('Welcome to the YouAreInARoom admin interface.',
-												'There are {unhandled_count} unhandled commands'.format(unhandled_count=len(self.unhandled)),
-												'Enter \'help\' if you need help'
-												)
+														 'There {verb} {unhandled_count} unhandled command{s}'.format(s='s' if not len(self.unhandled) == 1 else '', verb='are' if not len(self.unhandled) == 1 else 'is', unhandled_count=len(self.unhandled)),
+														 'Enter \'help\' if you need help, or \'help COMMAND\' if you need more help with a command',
+												    )
 		super(GameUpdater,self).__init__()
 	def print_topics(self,header,cmds,cmdlen,maxcol):
 		if header is not None:                                                                                                                                              
 			if cmds:                                                                                                                                                        
-					self.stdout.write("%s\n"%str(header))                                                                                                                       
+					self.stdout.write('{header}\n'.format(header=header))                                                                                                                       
 					if self.ruler:                                                                                                                                              
-							self.stdout.write("%s\n"%str(self.ruler * len(header)))                                                                                                 
+							self.stdout.write('{ruler}\n'.format(ruler=self.ruler*len(header)))                                                                                                 
 					self.columnize(cmds, maxcol-1)                                                                                                                              
-					self.stdout.write("\n")    	
+					self.stdout.write('\n')    	
 
 	def do_EOF(self,line):
 		print('')
 		return True
 	def do_exit(self,line):
-		"""Exits the program"""
+		'''Exits the program'''
 		return True 
 
-	def do_command(self,line):
-		"""Usage: command [add|unhandled]
-    add: adds a command to the story
-    unhandled: lists the unhandled commands 
-		"""
-		args=line.split(' ')
-		if len(args) is 0:
-			return False
-		subcmd=args[0]
-		subline=''
-		if len(args) > 2:
-			subline=' '.join(args[1:])
-		if subcmd == 'add':
-			self.command_add(subline)
-		elif subcmd == 'unhandled':
-			self.command_unhandled(subline)
-		
-	def complete_command(self,text,line,begin,end):
-		return [expansion for expansion in ['add', 'unhandled'] if expansion.startswith(text)]
-		
+	#########
+	# informative functions start here
+	#########
+	def complete_show(self,text,line,begin,end): return [expansion for expansion in ['unhandled'] if expansion.startswith(text)]
 	def do_show(self,line):
-		command=line.split(' ')[0]
-		newline=line.split(' ')[1:]
-		if command == 'unhandled':
-			self.command_unhandled(' '.join(newline))
+		'''Usage: show [unhandled]\n  unhandled [INDEX]: lists all unhandled commands, or the unhandled command that is described by the \'INDEX\' variable\n  state [NAME]: shows all states, or the state that is described by \'NAME\' '''
+		command,*args=line.split(' ')
+		if command == 'unhandled': admin.unhandled.show(args[0] if args else None)
+		elif command ==  'state':  state(self.db, 'show', args)
+		else: print(self.do_show.__doc__)
 
-	def command_unhandled(self,line):
-		if not line:
-			print('Listing unhandled commands...')
-			self.unhandled=self.db.find_unhandled_commands()
-			if len(self.unhandled) is 0:
-				print('  No unhandled commands found')
-			i=0
-			for command in self.unhandled:
-				print(str(i)+':'+command[0])
-				i+=1
-		else:
-			args=line.split(' ')
+	def complete_add(self,text,line,begin,end): return [expansion for expansion in ['unhandled'] if expansion.startswith(text)]
+	def do_add(self,line):
+		'''Usage: add [unhandled]\n  unhandled: opens a file in vim, that can be edited to add an unhandled command'''
+		command,*args=line.split(' ')
+		if command == 'unhandled': admin.unhandled.add(' '.join(args))
+		else: print(self.do_add.__doc__)
 
-	def command_add(self,line):
-		command=input('Enter command: ')
-		is_okay=None
-		while is_okay not in ('y','n'):
-			is_okay=input('You entered \"%s\"\nIs this okay? (y/n):\n' % command).lower()
-		pass	
+	def complete_remove(self,text,line,begin,end): return [expansion for expansion in ['unhandled'] if expansion.startswith(text)]
+	def do_remove(self,line):
+		'''Usage: remove [unhandled]\n  unhandled INDEX: removes the unhandled command indicated by the \'INDEX\' variable'''
+		command,*args=line.split(' ')
+		if command == 'unhandled': admin.unhandled.remove(int(args[0]) if args else None)
+		else: print(self.do_remove.__doc__)
 
-	def do_handle(self,line):
-		try:
-			index=int(line.split(' ')[0])
-		except:
-			print('You should fuck off without an argument')
-			return
-		item=self.unhandled[index]
-		print(item)
-		with tempfile.NamedTemporaryFile() as fh:
-			fh.write(bytes('### command ###\n{0}\n'.format(item[0]),'utf-8'))
-			fh.write(b'### state ###\n')
-			fh.write(b'### response ###\n')
-			fh.write(b'### new state ###\n')
-			fh.flush()
-			subprocess.call(['/usr/bin/vim',fh.name])		
+#	def complete_handle(self,text,line,begin,end): return [expansion for expansion in [] if expansion.startswith(text)]
+#	def do_handle(self,line):
+#		try:
+#			index=int(line.split(' ')[0])
+#		except:
+#			print('You should fuck off without an argument')
+#			return
+#		item=self.unhandled[index]
+#		print(item)
+#		with tempfile.NamedTemporaryFile() as fh:
+#			fh.write(bytes('### command ###\n{0}\n'.format(item[0]),'utf-8'))
+#			fh.write(b'### state ###\n')
+#			fh.write(b'### response ###\n')
+#			fh.write(b'### new state ###\n')
+#			fh.flush()
+#			subprocess.call(['/usr/bin/vim',fh.name])		
 
 if __name__=='__main__':
-	import sys
-	import os
-	if len(sys.argv) < 2: 
-		print("\x1b[31;1mError\x1b[0m: you should add a database, you fool")
+	import sys, os
+	if len(sys.argv) != 2: 
+		print('\x1b[31;1mError\x1b[0m: exactly one argument is required')
+		print('\x1b[32;1mUsage\x1b[0m: {arg0} DATABASE'.format(arg0=sys.argv[0]))
+		print('       where DATABASE is the path to an existing database,')
+		print('       or the name of a new story to be created.')
 		exit(1)
 	database_path=sys.argv[1]
 	if not os.path.isfile(database_path):
-		print('Creating database...')
+		print('Creating new database...')
 	db=database.Database(database_path)
 	try:
 		GameUpdater(db).cmdloop()
+	except KeyboardInterrupt:
+		print('\nExiting...')
+		exit(1)
 	except Exception as e:
 		print(e)
 		print('')
